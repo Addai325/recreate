@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="add-user-form">
+        <form method="post" action="">
+            {{ form.hidden_tag() }}
+            <fieldset>
+                <legend>Login</legend>
+               
+                <div>
+                    {{ form.email.label() }}
+                    {% if form.email.errors %}
+                        {{ form.email(class='error') }}
+                        {% for error in form.email.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    {% else %}
+                        {{ form.email() }}
+                    {% endif %}
+
+                </div>
+                <div>
+                    {{ form.password.label() }}
+                    {% if form.password.errors %}
+                        {{ form.password(class='error') }}
+                        {% for error in form.password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    {% else %}
+                        {{ form.password() }}
+                    {% endif %}
+
+                
+
+            </fieldset>
+            <div>
+                {{ form.submit() }}
+            </div>
+        </form>
+    </div>
+{% endblock content %}

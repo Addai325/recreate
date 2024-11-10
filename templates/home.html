@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <div class="the-home">
+        {% for user in users.items %}
+            <img src="{{ url_for('static', filename='profile_pics/'+ user.image_file) }}" class="pro_image">
+            <h2>{{ user.username }}</h2>
+            <p>{{ user.email }}</p>
+            <a href="{{ url_for('update_user', user_id=user.id) }}">Update user</a>
+            <a href="{{ url_for('delete_user', user_id=user.id) }}">Delete user</a>
+        {% endfor %}
+    </div>
+    <div>
+        {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+            {% if page_num %}
+                <a href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
+            {% else %}
+                ...
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}
