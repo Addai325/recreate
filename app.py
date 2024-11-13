@@ -1,13 +1,13 @@
 import secrets
 import os
 from PIL import Image
-from flask import Flask, render_template, redirect, request, url_for,session, flash
+from flask import Flask, render_template, redirect, request, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from forms import AddUser, RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin , login_user, current_user ,logout_user
 from flask_migrate import Migrate
-
+from flask_session import Session
 
 app=Flask(__name__)
 
@@ -15,9 +15,10 @@ app.config['SECRET_KEY']= 'mysecretkey'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Omni3255??!!@localhost/thedb'
 # app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:pSdtXdRTeLmfeHpJohajWCRAEWEHskmc@mysql.railway.internal:3306/railway"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-app.config['SESSION_TYPE'] = 'cookie'
-app.config['SESSION_PERMANENT']= False
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT']= True
 app.config['SESSION_COOKIE_SECURE'] = False
+app.config['PERMANENT_SESSION_LIFETIME']= 1800
 
 
 app.app_context().push()
@@ -26,8 +27,8 @@ bcrpt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view='login'
 migrate = Migrate(app, db)
-app.config['PERMANENT_SESSION_LIFETIME']= 1800
 
+session = Session(app)
 
 
 
@@ -141,7 +142,8 @@ def login():
         if user and bcrpt.check_password_hash(user.password, form.password.data):
             login_user(user)
             session.permanent = True
-            session['username']=user.username
+            session.modified = True
+            # session['username'] = user.username
             return redirect(url_for('home'))
         else:
             flash('Incorrect login credentials please check email and password')
