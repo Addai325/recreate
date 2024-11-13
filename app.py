@@ -12,7 +12,9 @@ from flask_migrate import Migrate
 app=Flask(__name__)
 
 app.config['SECRET_KEY']= 'mysecretkey'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Omni3255??!!@localhost/thedb'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Omni3255??!!@localhost/thedb'
+# app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:pSdtXdRTeLmfeHpJohajWCRAEWEHskmc@mysql.railway.internal:3306/railway"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 
 
 app.app_context().push()
