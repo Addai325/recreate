@@ -15,6 +15,9 @@ app.config['SECRET_KEY']= 'mysecretkey'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Omni3255??!!@localhost/thedb'
 # app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:pSdtXdRTeLmfeHpJohajWCRAEWEHskmc@mysql.railway.internal:3306/railway"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT']= False
+app.config['SESSION_COOKIE_SECURE'] = True
 
 
 app.app_context().push()
@@ -137,27 +140,40 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrpt.check_password_hash(user.password, form.password.data):
             login_user(user)
-            session['username']=user.username
             session.permanent = True
+            session['username']=user.username
             return redirect(url_for('home'))
         else:
             flash('Incorrect login credentials please check email and password')
     return render_template('login.html', title='Login', form=form)
 
-@app.before_request
-def session_time_checkout():
-    if request.endpoint in ['login']:
-        return
-    session.modified = True
-    if current_user.is_authenticated and 'username' not in session:
-        flash('Your session has expired, kindly log in again')
-        return redirect(url_for('login'))
+# @app.before_request
+# def session_time_checkout():
+#     if request.endpoint in ['login']:
+#         return
+#     session.modified = True
+#     if current_user.is_authenticated and 'username' not in session:
+#         flash('Your session has expired, kindly log in again')
+#         return redirect(url_for('login'))
+
+
+# @app.before_request
+# def session_time_checkout():
+#     # Skip session check on login route
+#     if request.endpoint == 'login':
+#         return
+
+#     # Check if user is authenticated but session has expired
+#     if current_user.is_authenticated and 'username' not in session:
+#         flash('Your session has expired, kindly log in again')
+#         return redirect(url_for('login'))
 
 
 
 @app.route("/logout", methods=['GET', 'POST'])
 def logout():
     logout_user()
+    session.clear()
     return redirect(url_for('home'))
 
 
