@@ -50,16 +50,13 @@ class User(db.Model, UserMixin):
 
 
 
-
 @app.before_request
 def before_request():
+    # Ensure the session user_id is used to manage session state
     if 'user_id' in session:
-        session.permanent = True  # Refresh session lifetime
         user = User.query.get(session['user_id'])
         if user and not current_user.is_authenticated:
-            login_user(user, remember=True)
-    else:
-        logout_user()
+            login_user(user)
 
 
 
