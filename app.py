@@ -7,7 +7,7 @@ from forms import AddUser, RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin , login_user, current_user ,logout_user
 from flask_migrate import Migrate
-
+from flask_session import Session
 
 app=Flask(__name__)
 
@@ -17,19 +17,17 @@ app.config['SECRET_KEY']= 'mysecretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT']= True
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_USE_SIGNER'] = True 
 app.config['PERMANENT_SESSION_LIFETIME']= 1800
 
 
 app.app_context().push()
 db = SQLAlchemy(app)
-bcrpt = Bcrypt(app)
+bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view='login'
 migrate = Migrate(app, db)
 
-# session = Session(app)
+app_session = Session(app)
 
 
 
@@ -50,11 +48,40 @@ class User(db.Model, UserMixin):
         return f"User('{self.username}', '{self.email}', '{self.image_file}')"
 
 
+
+
+
+@app.before_request
+def before_request():
+    # Check if user is in session
+    if 'user_id' in session:
+        session.permanent = True  # Refresh session lifetime
+        user = User.query.get(session['user_id'])
+        if user:
+            # Log in the user using Flask-Login, without relying on is_authenticated
+            login_user(user)
+        else:
+            session.clear()  # Clear session if user no longer exists
+
+
+
+
+# @app.route("/")
+# def home():
+#     page = request.args.get('page', 1, type=int)
+#     users = User.query.paginate(page=page, per_page=2)
+#     return render_template('home.html', users=users)
+
 @app.route("/")
 def home():
     page = request.args.get('page', 1, type=int)
     users = User.query.paginate(page=page, per_page=2)
-    return render_template('home.html', users=users)
+    current_user = None
+    if 'user_id' in session:
+        current_user = User.query.get(session['user_id'])
+    return render_template('home.html', users=users, current_user=current_user)
+
+
 
 
 def save_picture(form_picture):
@@ -118,17 +145,31 @@ def delete_user(user_id):
 
 
 
+# @app.route("/register", methods=['GET', 'POST'])
+# def register():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('home'))
+#     form=RegisterForm()
+#     if form.validate_on_submit():
+#         hashed_password = bcrpt.generate_password_hash(form.password.data).decode('utf-8')
+#         user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+#         db.session.add(user)
+#         db.session.commit()
+#         flash('You have been registered successfully')
+#         return redirect(url_for('login'))
+#     return render_template('register.html', form=form)
+
+
+
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    # if current_user.is_authenticated:
-        # return redirect(url_for('home'))
-    form=RegisterForm()
+    form = RegisterForm()
     if form.validate_on_submit():
-        hashed_password = bcrpt.generate_password_hash(form.password.data).decode('utf-8')
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user = User(username=form.username.data, email=form.email.data, password=hashed_password)
         db.session.add(user)
         db.session.commit()
-        flash('You have been registered successfully')
+        flash('You have been registered successfully!')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
@@ -152,60 +193,24 @@ def register():
 
 
 
-
-
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    # if current_user.is_authenticated:
-        # return redirect(url_for('home'))
-    
     form = LoginForm()
-    
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        
-        if user and bcrpt.check_password_hash(user.password, form.password.data):
-            login_user(user)
-            session.permanent = True
-            session.modified = True
-            
-            # Set session values for role and access level
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            # Set user ID in session directly
             session['user_id'] = user.id
-            session['role'] = getattr(user, 'role', "User")  # Update based on user model
-            session['access'] = getattr(user, 'access', "Basic")  # Update based on user model
-
-            # Redirect to home after login
             return redirect(url_for('home'))
         else:
             flash('Incorrect login credentials. Please check email and password.')
-    
-    return render_template('login.html', title='Login', form=form)
-
-# @app.before_request
-# def session_time_checkout():
-#     if request.endpoint in ['login']:
-#         return
-#     session.modified = True
-#     if current_user.is_authenticated and 'username' not in session:
-#         flash('Your session has expired, kindly log in again')
-#         return redirect(url_for('login'))
-
-
-# @app.before_request
-# def session_time_checkout():
-#     # Skip session check on login route
-#     if request.endpoint == 'login':
-#         return
-
-#     # Check if user is authenticated but session has expired
-#     if current_user.is_authenticated and 'username' not in session:
-#         flash('Your session has expired, kindly log in again')
-#         return redirect(url_for('login'))
+    return render_template('login.html', form=form)
 
 
 
 @app.route("/logout", methods=['GET', 'POST'])
 def logout():
+    session.pop('user_id', None)
     logout_user()
     # session.clear()
     return redirect(url_for('home'))
