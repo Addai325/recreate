@@ -120,8 +120,8 @@ def delete_user(user_id):
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+    # if current_user.is_authenticated:
+        # return redirect(url_for('home'))
     form=RegisterForm()
     if form.validate_on_submit():
         hashed_password = bcrpt.generate_password_hash(form.password.data).decode('utf-8')
@@ -156,8 +156,8 @@ def register():
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+    # if current_user.is_authenticated:
+        # return redirect(url_for('home'))
     
     form = LoginForm()
     
