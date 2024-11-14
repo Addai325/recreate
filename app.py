@@ -7,7 +7,7 @@ from forms import AddUser, RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin , login_user, current_user ,logout_user
 from flask_migrate import Migrate
-# from flask_session import Session
+
 
 app=Flask(__name__)
 
@@ -18,6 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT']= True
 app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_USE_SIGNER'] = True 
 app.config['PERMANENT_SESSION_LIFETIME']= 1800
 
 
@@ -152,6 +153,7 @@ def register():
 
 
 
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -169,8 +171,8 @@ def login():
             
             # Set session values for role and access level
             session['user_id'] = user.id
-            session['role'] = user.role if hasattr(user, 'role') else "User"  # Update based on user model
-            session['access'] = user.access if hasattr(user, 'access') else "Basic"  # Update based on user model
+            session['role'] = getattr(user, 'role', "User")  # Update based on user model
+            session['access'] = getattr(user, 'access', "Basic")  # Update based on user model
 
             # Redirect to home after login
             return redirect(url_for('home'))
