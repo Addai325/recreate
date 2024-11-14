@@ -53,15 +53,13 @@ class User(db.Model, UserMixin):
 
 @app.before_request
 def before_request():
-    # Check if user is in session
     if 'user_id' in session:
         session.permanent = True  # Refresh session lifetime
         user = User.query.get(session['user_id'])
-        if user:
-            # Log in the user using Flask-Login, without relying on is_authenticated
-            login_user(user)
-        else:
-            session.clear()  # Clear session if user no longer exists
+        if user and not current_user.is_authenticated:
+            login_user(user, remember=True)
+    else:
+        logout_user()
 
 
 
@@ -199,8 +197,9 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
-            # Set user ID in session directly
-            session['user_id'] = user.id
+            session['user_id'] = user.id  # Set user ID in session
+            session.modified = True  # Ensure session saves the modification
+            flash('Login successful!', 'success')
             return redirect(url_for('home'))
         else:
             flash('Incorrect login credentials. Please check email and password.')
