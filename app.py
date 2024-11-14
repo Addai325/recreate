@@ -1,13 +1,13 @@
 import secrets
 import os
 from PIL import Image
-from flask import Flask, render_template, redirect, request, url_for, flash
+from flask import Flask, render_template, redirect, request, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from forms import AddUser, RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin , login_user, current_user ,logout_user
 from flask_migrate import Migrate
-from flask_session import Session
+# from flask_session import Session
 
 app=Flask(__name__)
 
@@ -28,7 +28,7 @@ login_manager = LoginManager(app)
 login_manager.login_view='login'
 migrate = Migrate(app, db)
 
-session = Session(app)
+# session = Session(app)
 
 
 
@@ -36,7 +36,7 @@ session = Session(app)
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-
+    
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -132,21 +132,51 @@ def register():
     return render_template('register.html', form=form)
 
 
+# @app.route("/login", methods=['GET', 'POST'])
+# def login():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('home'))
+#     form=LoginForm()
+#     if form.validate_on_submit():
+#         user = User.query.filter_by(email=form.email.data).first()
+#         if user and bcrpt.check_password_hash(user.password, form.password.data):
+#             login_user(user)
+#             session.permanent = True
+#             session.modified = True
+#             # session['username'] = user.username
+#             return redirect(url_for('home'))
+#         else:
+#             flash('Incorrect login credentials please check email and password')
+#     return render_template('login.html', title='Login', form=form)
+
+
+
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-    form=LoginForm()
+    
+    form = LoginForm()
+    
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
+        
         if user and bcrpt.check_password_hash(user.password, form.password.data):
             login_user(user)
             session.permanent = True
             session.modified = True
-            # session['username'] = user.username
+            
+            # Set session values for role and access level
+            session['user_id'] = user.id
+            session['role'] = user.role if hasattr(user, 'role') else "User"  # Update based on user model
+            session['access'] = user.access if hasattr(user, 'access') else "Basic"  # Update based on user model
+
+            # Redirect to home after login
             return redirect(url_for('home'))
         else:
-            flash('Incorrect login credentials please check email and password')
+            flash('Incorrect login credentials. Please check email and password.')
+    
     return render_template('login.html', title='Login', form=form)
 
 # @app.before_request
@@ -175,7 +205,7 @@ def login():
 @app.route("/logout", methods=['GET', 'POST'])
 def logout():
     logout_user()
-    session.clear()
+    # session.clear()
     return redirect(url_for('home'))
 
 
