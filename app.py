@@ -53,6 +53,7 @@ def save_picture(form_picture):
     return picture_fn
 
 # Home route with pagination
+@login_required
 @app.route("/")
 def home():
     page = request.args.get('page', 1, type=int)
