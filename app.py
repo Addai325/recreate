@@ -24,12 +24,13 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+login_manager.init_app(app)
 migrate = Migrate(app, db)
 app_session = Session(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return User.query.get(user_id)
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,7 +55,6 @@ def save_picture(form_picture):
 
 # Home route with pagination
 @app.route("/")
-@login_required
 def home():
     page = request.args.get('page', 1, type=int)
     users = User.query.paginate(page=page, per_page=2)
