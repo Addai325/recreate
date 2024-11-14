@@ -155,19 +155,19 @@ def delete_user(user_id):
 #     return render_template('register.html', form=form)
 
 
-
 @app.route("/register", methods=['GET', 'POST'])
 def register():
+    if 'user_id' in session:  # Redirect if user is already logged in
+        return redirect(url_for('home'))
     form = RegisterForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user = User(username=form.username.data, email=form.email.data, password=hashed_password)
         db.session.add(user)
         db.session.commit()
-        flash('You have been registered successfully!')
+        flash('You have been registered successfully!', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
-
 
 # @app.route("/login", methods=['GET', 'POST'])
 # def login():
@@ -187,19 +187,21 @@ def register():
 #     return render_template('login.html', title='Login', form=form)
 
 
-
 @app.route("/login", methods=['GET', 'POST'])
 def login():
+    if 'user_id' in session:  # Redirect if already logged in
+        return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
-            session['user_id'] = user.id  # Set user ID in session
-            session.modified = True  # Ensure session saves the modification
+            session['user_id'] = user.id  # Store user ID in session
+            session.permanent = True  # Make session permanent
+            session.modified = True  # Ensure session is updated
             flash('Login successful!', 'success')
             return redirect(url_for('home'))
         else:
-            flash('Incorrect login credentials. Please check email and password.')
+            flash('Incorrect login credentials. Please check email and password.', 'danger')
     return render_template('login.html', form=form)
 
 

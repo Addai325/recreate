@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="header-links">
-        {% if session.get('user_id') %}
+        {% if 'user_id' in session %}
             <div>
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="{{ url_for('add_user') }}">Add User</a>    
