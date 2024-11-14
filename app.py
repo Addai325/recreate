@@ -7,14 +7,12 @@ from forms import AddUser, RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 from flask_migrate import Migrate
-from flask_session import Session
 
 app = Flask(__name__)
 
 # Configuration
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 1800
 
@@ -23,15 +21,16 @@ app.app_context().push()
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
 login_manager.init_app(app)
+login_manager.login_view = 'login'  # Redirect unauthenticated users to the login page
 migrate = Migrate(app, db)
-app_session = Session(app)
 
+# Load user callback function for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
+    return User.query.get(int(user_id))  # Ensures user_id is an integer
 
+# User Model
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
@@ -84,9 +83,10 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user)
+            login_user(user)  # Log the user in and set the session
             flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+            next_page = request.args.get('next')  # Redirect to the next page if exists
+            return redirect(next_page or url_for('home'))
         else:
             flash('Incorrect login credentials. Please check email and password.', 'danger')
     return render_template('login.html', form=form)
@@ -95,7 +95,7 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
-    logout_user()
+    logout_user()  # End the session for the current user
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
