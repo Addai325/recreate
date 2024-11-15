@@ -1,7 +1,7 @@
 import secrets
 import os
 from PIL import Image
-from flask import Flask, render_template, redirect, request, url_for, flash
+from flask import Flask, render_template, redirect, request, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from forms import AddUser, RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
@@ -13,11 +13,8 @@ app = Flask(__name__)
 # Configuration
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 1800
 
 # Initialize extensions
-app.app_context().push()
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
@@ -52,17 +49,15 @@ def save_picture(form_picture):
     i.save(picture_path)
     return picture_fn
 
-# Home route with pagination
 @app.route("/")
 def home():
     page = request.args.get('page', 1, type=int)
     users = User.query.paginate(page=page, per_page=2)
     return render_template('home.html', users=users)
 
-# Register route
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:  # Redirect if user is already logged in
+    if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RegisterForm()
     if form.validate_on_submit():
@@ -74,28 +69,27 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
-# Login route
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:  # Redirect if already logged in
+    if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user)  # Log the user in and set the session
+            login_user(user)
             flash('Login successful!', 'success')
-            next_page = request.args.get('next')  # Redirect to the next page if exists
+            next_page = request.args.get('next')
             return redirect(next_page or url_for('home'))
         else:
             flash('Incorrect login credentials. Please check email and password.', 'danger')
     return render_template('login.html', form=form)
 
-# Logout route
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()  # End the session for the current user
+    session.clear()  # Explicitly clear the session data from the client-side
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
