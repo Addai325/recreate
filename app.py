@@ -13,7 +13,8 @@ app = Flask(__name__)
 # Configuration
 app.config['SECRET_KEY'] = 'mysecretkey'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Addai325:Extra111??!!@Addai325.mysql.pythonanywhere-services.com/Addai325$default'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'amysql+pymysql://Addai325:Extra111??!!@Addai325.mysql.pythonanywhere-services.com/Addai325$omniblogs'
 
 
 # Initialize extensions
