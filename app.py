@@ -13,17 +13,20 @@ app = Flask(__name__)
 # Configuration
 app.config['SECRET_KEY'] = 'mysecretkey'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqldb://Addai325:Extra111??!!@Addai325.mysql.pythonanywhere-services.com/Addai325$omniblogs"
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Addai325:Extra111??!!@Addai325.mysql.pythonanywhere-services.com/Addai325$omniblogs'
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqldb://Addai325:Extra111??!!@Addai325.mysql.pythonanywhere-services.com/Addai325$omniblogs"
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle' : 280}
 
 
 # Initialize extensions
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.init_app(app)
 login_manager.login_view = 'login'  # Redirect unauthenticated users to the login page
 migrate = Migrate(app, db)
+db.init_app(app)
 
 # Load user callback function for Flask-Login
 @login_manager.user_loader
